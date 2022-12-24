@@ -2,6 +2,8 @@ __pycache__/
 venv/
 static/
 image/
+.vscode/
+.idea/
 *.pyc
 db.sqlite3
 .env

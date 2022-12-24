@@ -1,7 +1,9 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 from ckeditor.fields import RichTextField
 from accounts.models import User
 from utils.misc import generate_slug, image_path
+
 
 class Category(models.Model):
     title = models.CharField(max_length=200, unique=True)
@@ -12,12 +14,14 @@ class Category(models.Model):
 
 class Food(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, blank=True)
     title = models.CharField(max_length=200)
     slug = models.SlugField(blank=True, editable=False)
     price = models.DecimalField(max_digits=5, decimal_places=2)
-    discount_price = models.DecimalField(max_digits=5, decimal_places=2)
-    image = models.ImageField(upload_to=image_path)
+    discount_price = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True)
+    image = models.ImageField(upload_to=image_path, blank=True)
     description = RichTextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -25,5 +29,12 @@ class Food(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
-        if self.slug is not None:
+        if self.user.type != 'seller':
+            return
+        if not self.slug:
             self.slug = generate_slug(self.title)
+        super(Food, self).save(*args, **kwargs)
+
+    def clean(self):
+        if self.user.type != 'seller':
+            raise ValidationError({"user": "User type must be Seller"})
