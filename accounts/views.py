@@ -24,14 +24,14 @@ class SignUpView(APIView):
 
 class UserDetailView(APIView):
     def get(self, request):
-        if request.user:
+        if request.user.is_authenticated:
             user = User.objects.get(id=request.user.id)
             user_serializer = UserDetailSerializer(user)
             return Response(user_serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     def put(self, request):
-        if request.user:
+        if request.user.is_authenticated:
             user = User.objects.get(id=request.user.id)
             user_serializer = UserDetailSerializer(
                 user, data=request.data, partial=True)

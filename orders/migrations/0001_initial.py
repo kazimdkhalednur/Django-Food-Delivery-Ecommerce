@@ -3,7 +3,6 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import utils.misc
 
 
 class Migration(migrations.Migration):
@@ -12,27 +11,29 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('products', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Category',
+            name='Cart',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200, unique=True)),
+                ('quantity', models.SmallIntegerField()),
+                ('food', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='products.food')),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
-            name='Food',
+            name='Order',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('slug', models.SlugField(blank=True, editable=False)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('image', models.ImageField(blank=True, upload_to=utils.misc.image_path)),
-                ('description', models.TextField()),
+                ('amount', models.DecimalField(blank=True, decimal_places=2, max_digits=10)),
+                ('txnid', models.CharField(blank=True, max_length=200)),
+                ('is_ordered', models.BooleanField(default=False)),
+                ('is_paid', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('category', models.ForeignKey(blank=True, on_delete=django.db.models.deletion.CASCADE, to='products.category')),
+                ('cart', models.ManyToManyField(to='orders.cart')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
         ),

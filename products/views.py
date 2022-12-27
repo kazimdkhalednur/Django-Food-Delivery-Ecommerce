@@ -14,7 +14,7 @@ class FoodAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, format=None):
-        if request.user:
+        if request.user.is_authenticated:
             if request.user.type == "seller":
                 serializer = FoodCreateSerializer(data=request.data)
 
@@ -44,7 +44,7 @@ class FoodDetailAPIView(APIView):
         food_obj = Food.objects.get(id=pk)
         serializer = FoodDetailSerializer(food_obj, data=request.data)
         if serializer.is_valid():
-            if food_obj .user == request.user:
+            if food_obj.user == request.user:
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -58,3 +58,10 @@ class FoodDetailAPIView(APIView):
                 return Response({"msg": "delete Successfully"}, status=status.HTTP_204_NO_CONTENT)
             return Response(status=status.HTTP_401_UNAUTHORIZED)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+
+class CheckAPIView(APIView):
+    def get(self, request):
+        if request.user.is_authenticated:
+            return Response({"msg": "ok"}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)

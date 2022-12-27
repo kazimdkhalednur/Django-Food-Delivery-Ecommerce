@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from ckeditor.fields import RichTextField
 from accounts.models import User
 from utils.misc import generate_slug, image_path
 
@@ -19,10 +18,8 @@ class Food(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(blank=True, editable=False)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount_price = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True)
     image = models.ImageField(upload_to=image_path, blank=True)
-    description = RichTextField()
+    description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
