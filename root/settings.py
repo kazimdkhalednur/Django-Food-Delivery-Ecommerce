@@ -24,11 +24,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'ckeditor',
     'ckeditor_uploader',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -109,3 +111,5 @@ CKEDITOR_CONFIGS = {
         'width': 'full',
     },
 }
+
+CORS_ALLOW_ALL_ORIGINS = True

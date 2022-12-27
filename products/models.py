@@ -18,9 +18,9 @@ class Food(models.Model):
         Category, on_delete=models.CASCADE, blank=True)
     title = models.CharField(max_length=200)
     slug = models.SlugField(blank=True, editable=False)
-    price = models.DecimalField(max_digits=5, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(
-        max_digits=5, decimal_places=2, blank=True, null=True)
+        max_digits=10, decimal_places=2, blank=True, null=True)
     image = models.ImageField(upload_to=image_path, blank=True)
     description = RichTextField()
     created_at = models.DateTimeField(auto_now_add=True)
