@@ -1,3 +1,4 @@
+from asd import asd
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -8,7 +9,7 @@ from accounts.models import User
 
 class FoodAPIView(APIView):
     def get(self, request, format=None):
-        food_list = Food.objects.all()
+        food_list = Food.objects.filter(is_visible=True)
         serializer = FoodDetailSerializer(food_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -82,6 +83,10 @@ class CategoryAPIView(APIView):
 
 class CheckAPIView(APIView):
     def get(self, request):
+        # for data in asd:
+        #     category = Category.objects.get(title=data['category'])
+        #     Food.objects.create(user=request.user, title=data['title'], category=category,
+        #                         price=data['price'], description=data['description'])
         if request.user.is_authenticated:
             return Response({"msg": "ok"}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_401_UNAUTHORIZED)

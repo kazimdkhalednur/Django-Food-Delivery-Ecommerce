@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
-import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -58,7 +57,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'root.wsgi.application'
 
-DATABASES = {'default': dj_database_url.config(default=config('DATABASE_URL'))}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -100,8 +104,17 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=config('ACCESS_TOKEN_LIFETIME', cast=int)),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=config('REFRESH_TOKEN_LIFETIME', cast=int)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=config('REFRESH_TOKEN_LIFETIME', cast=int)),
     'ROTATE_REFRESH_TOKENS': True
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000'
+]
+
+SITE_URL = "http://localhost:3000/"
+
+# stripe configurations
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', cast=str)
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', cast=str)
+STRIPE_SECRET_WEBHOOK = config('STRIPE_SECRET_WEBHOOK', cast=str)

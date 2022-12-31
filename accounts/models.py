@@ -40,16 +40,15 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     user_type = {
         ("buyer", "buyer"),
-        ("seller", "seller")
+        ("seller", "seller"),
+        ("deliver", "deliver"),
     }
     username = None
     first_name = None
     last_name = None
     full_name = models.CharField(_("full name"), max_length=150, blank=True)
     email = models.EmailField(_("Email Address"), unique=True)
-    address = models.CharField(max_length=200, blank=True)
-    phone = models.CharField(max_length=11, blank=True)
-    type = models.CharField(max_length=6, choices=user_type)
+    type = models.CharField(max_length=10, choices=user_type)
 
     EMAIL_FIELD = "email"
     USERNAME_FIELD = "email"
