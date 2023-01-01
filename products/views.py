@@ -3,13 +3,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from .models import Food, Category
-from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer
+from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer
 from accounts.models import User
 
 
 class FoodAPIView(APIView):
     def get(self, request, format=None):
         food_list = Food.objects.filter(is_visible=True)
+        serializer = FoodDetailSerializer(food_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SellerFoodAPIVIew(APIView):
+    def get(self, request, format=None):
+        food_list = Food.objects.filter(
+            is_visible=True).order_by("-created_at")
         serializer = FoodDetailSerializer(food_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -61,17 +70,19 @@ class FoodDetailAPIView(APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-class CategoryAPIView(APIView):
+class CategoriesAPIView(APIView):
     def get(self, request, format=None):
         category_list = Category.objects.all()
         serializer = CategorySerializer(category_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+class CreateCategoryAPIView(APIView):
     def post(self, request, format=None):
         if request.user.is_authenticated:
             if request.user.type == "seller":
-                serializer = CategorySerializer(data=request.data)
+                serializer = CreateCategorySerializer(data=request.data)
 
                 if serializer.is_valid():
                     serializer.save()
@@ -81,12 +92,51 @@ class CategoryAPIView(APIView):
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
+class CategoryAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return Category.objects.get(pk=pk)
+        except Category.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                category = self.get_object(pk)
+                serializer = CreateCategorySerializer(category)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def put(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                category = self.get_object(pk)
+                serializer = CreateCategorySerializer(
+                    category, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def delete(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                category = self.get_object(pk)
+                category.delete()
+                return Response({"msg": "delete Successfully"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
 class CheckAPIView(APIView):
     def get(self, request):
-        # for data in asd:
-        #     category = Category.objects.get(title=data['category'])
-        #     Food.objects.create(user=request.user, title=data['title'], category=category,
-        #                         price=data['price'], description=data['description'])
+        for data in asd:
+            category = Category.objects.get(title=data['category'])
+            Food.objects.create(user=request.user, title=data['title'], category=category,
+                                price=data['price'], description=data['description'])
         if request.user.is_authenticated:
             return Response({"msg": "ok"}, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_401_UNAUTHORIZED)

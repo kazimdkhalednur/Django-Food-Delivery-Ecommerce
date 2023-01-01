@@ -6,8 +6,10 @@ from django.http import HttpResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from django.db.models import Q
 from .models import Cart, Order
 from products.models import Food
+from .serializers import OrderSerializer
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -45,7 +47,7 @@ class CreateCheckOutSession(APIView):
             if request.user.type == "buyer":
                 id = request.data['id']
                 try:
-                    order = Order.objects.get(id=id)
+                    order = Order.objects.get(id=id, user=request.user)
                     checkout_session = stripe.checkout.Session.create(
                         line_items=[
                             {
@@ -67,6 +69,8 @@ class CreateCheckOutSession(APIView):
                         success_url=settings.SITE_URL + 'success',
                         cancel_url=settings.SITE_URL + '?canceled=true',
                     )
+                    order.pending_payment_url = checkout_session.url
+                    order.save()
                     return Response(checkout_session, status=200)
                 except Exception as e:
                     return Response({'msg': 'something went wrong while creating stripe session', 'error': str(e)}, status=500)
@@ -103,7 +107,47 @@ def stripe_webhook_view(request):
             order.status = 'paid'
             order.is_ordered = True
         else:
-            order.status = 'paid'
+            order.status = 'stole'
         order.save()
 
     return HttpResponse(status=200)
+
+
+class OrderListAPIView(APIView):
+    def get(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "buyer":
+                order_list = Order.objects.filter(
+                    user=request.user).exclude(status="stolen").order_by('-created_at')
+                serializer = OrderSerializer(order_list, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SellerOrderListAPIView(APIView):
+    def get(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                query = Q() | Q(status="pending") | Q(status="stolen")
+                order_list = Order.objects.exclude(
+                    query).order_by('-created_at')
+                serializer = OrderSerializer(order_list, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class PendingOrderListAPIView(APIView):
+    def get(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                order_list = Order.objects.filter(
+                    status="paid").order_by('-created_at')
+                serializer = OrderSerializer(order_list, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)

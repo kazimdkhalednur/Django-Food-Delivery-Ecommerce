@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.core.exceptions import ValidationError
 from accounts.models import User
@@ -15,12 +16,14 @@ class Cart(models.Model):
 
 class Order(models.Model):
     ORDER_STATUS_CHOICES = {
-        ('pending', 'PEnding'),
+        ('pending', 'Pending'),
         ('paid', 'Paid'),
         ('on_the_way', 'On The Way'),
         ('delivered', 'Delivered'),
         ('stolen', 'Stolen'),
     }
+    order_id = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     cart = models.ManyToManyField(Cart, blank=True, editable=False)
     amount = models.DecimalField(
@@ -29,6 +32,8 @@ class Order(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     txnid = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES)
+    pending_payment_url = models.CharField(
+        max_length=300, blank=True, null=True)
     is_ordered = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,6 +44,8 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         if self.user.type != 'buyer':
             return
+        if self.status != "pending":
+            self.pending_payment_url = None
         super(Order, self).save(*args, **kwargs)
 
     def clean(self):
