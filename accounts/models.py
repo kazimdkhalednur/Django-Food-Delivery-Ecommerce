@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.hashers import make_password
 from django.utils.translation import gettext_lazy as _
+from utils.misc import profile_image_path
 
 
 class UserManager(BaseUserManager):
@@ -48,6 +49,10 @@ class User(AbstractUser):
     last_name = None
     full_name = models.CharField(_("full name"), max_length=150, blank=True)
     email = models.EmailField(_("Email Address"), unique=True)
+    img = models.ImageField(
+        upload_to=profile_image_path, blank=True, null=True)
+    address = models.CharField(max_length=300, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
     type = models.CharField(max_length=10, choices=user_type)
 
     EMAIL_FIELD = "email"

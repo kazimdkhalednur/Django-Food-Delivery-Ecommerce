@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Food, Category
+from .models import Food, Category, Review
 
 
 class FoodDetailSerializer(serializers.ModelSerializer):
@@ -18,7 +18,8 @@ class FoodCreateSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = "__all__" 
+        fields = "__all__"
+
 
 class Base64ImageField(serializers.ImageField):
     """
@@ -51,7 +52,8 @@ class Base64ImageField(serializers.ImageField):
                 self.fail('invalid_image')
 
             # Generate file name:
-            file_name = str(uuid.uuid4())[:12] # 12 characters are more than enough.
+            # 12 characters are more than enough.
+            file_name = str(uuid.uuid4())[:12]
             # Get the file name extension:
             file_extension = self.get_file_extension(file_name, decoded_file)
 
@@ -60,7 +62,7 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(decoded_file, name=complete_file_name)
 
         return super(Base64ImageField, self).to_internal_value(data)
-    
+
     def get_file_extension(self, file_name, decoded_file):
         import imghdr
 
@@ -69,10 +71,25 @@ class Base64ImageField(serializers.ImageField):
 
         return extension
 
+
 class CreateCategorySerializer(serializers.ModelSerializer):
     image = Base64ImageField(
         max_length=None, use_url=True,
     )
+
     class Meta:
         model = Category
         fields = ("id", "title", "image")
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ("id", "user", "food", "rating", "review")
+        depth = 1
+
+
+class ReviewCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ("food", "rating", "review")

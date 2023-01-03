@@ -13,3 +13,7 @@ def image_path(instance, filename):
 
 def image_path_category(instance, filename):
     return os.path.join(instance.title,  filename)
+
+
+def profile_image_path(instance, filename):
+    return os.path.join(instance.email,  filename)

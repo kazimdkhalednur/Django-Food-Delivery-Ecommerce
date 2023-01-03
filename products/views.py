@@ -2,8 +2,8 @@ from asd import asd
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from .models import Food, Category
-from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer
+from .models import Food, Category, Review
+from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer, ReviewSerializer, ReviewCreateSerializer
 from accounts.models import User
 
 
@@ -127,6 +127,27 @@ class CategoryAPIView(APIView):
                 category = self.get_object(pk)
                 category.delete()
                 return Response({"msg": "delete Successfully"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ReviewAPIView(APIView):
+    def get(self, request, pk, format=None):
+        food = Food.objects.get(id=pk)
+        review_list = Review.objects.filter(food=food).order_by('-created_at')
+        serializer = ReviewSerializer(review_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "buyer":
+                serializer = ReviewCreateSerializer(data=request.data)
+
+                if serializer.is_valid():
+                    serializer.save(user=request.user)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 

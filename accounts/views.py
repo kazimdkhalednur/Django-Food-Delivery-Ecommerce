@@ -40,6 +40,7 @@ class UserDetailView(APIView):
             user = User.objects.get(id=request.user.id)
             user_serializer = UserDetailSerializer(
                 user, data=request.data, partial=True)
+            print(user_serializer)
             if user_serializer.is_valid():
                 user_serializer.save()
                 return Response(user_serializer.data, status=status.HTTP_200_OK)

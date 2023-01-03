@@ -33,7 +33,7 @@ class Order(models.Model):
     txnid = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES)
     pending_payment_url = models.CharField(
-        max_length=300, blank=True, null=True)
+        max_length=1000, blank=True, null=True)
     is_ordered = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
