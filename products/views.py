@@ -5,6 +5,7 @@ from rest_framework import status
 from .models import Food, Category, Review
 from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer, ReviewSerializer, ReviewCreateSerializer
 from accounts.models import User
+from orders.models import Order
 
 
 class FoodAPIView(APIView):
@@ -148,6 +149,26 @@ class ReviewAPIView(APIView):
                     serializer.save(user=request.user)
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UserReviewAPIView(APIView):
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "buyer":
+                food = Food.objects.get(id=pk)
+                order = Order.objects.filter(
+                    user=request.user, status="delivered").order_by("-created_at")
+                # print(order_list)
+                # for order in order_list:
+                for cart in order[0].cart.all():
+                    print(cart)
+                    print(cart.food.id)
+                    if cart.food.id == food.id:
+                        print("ok")
+                    #s     return Response({"msg": "success"}, status=status.HTTP_200_OK)
+                    # return Response({"msg": "error"}, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 

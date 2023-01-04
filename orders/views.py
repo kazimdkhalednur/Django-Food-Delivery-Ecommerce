@@ -66,7 +66,7 @@ class CreateCheckOutSession(APIView):
                             "order_id": order.id
                         },
                         mode='payment',
-                        success_url=settings.SITE_URL + 'success',
+                        success_url=settings.SITE_URL + '/order?success=true',
                         cancel_url=settings.SITE_URL + '?canceled=true',
                     )
                     order.pending_payment_url = checkout_session.url

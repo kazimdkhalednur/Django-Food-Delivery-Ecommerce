@@ -11,5 +11,6 @@ urlpatterns = [
          name='create-category'),
     path('category/<pk>/', views.CategoryAPIView.as_view(), name='category'),
     path('review/<pk>/', views.ReviewAPIView.as_view(), name='review'),
+    path('check-review/<pk>/', views.UserReviewAPIView.as_view(), name='review'),
     path('<pk>/', views.FoodDetailAPIView.as_view(), name='detail'),
 ]
