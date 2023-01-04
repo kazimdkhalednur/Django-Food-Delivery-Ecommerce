@@ -2,6 +2,7 @@ from rest_framework.views import APIView, Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User
 from .serializers import UserSerializer, UserDetailSerializer, UserTokenObtainPairSerializer
 
@@ -28,6 +29,8 @@ class UserTokenObtainPairView(TokenObtainPairView):
 
 
 class UserDetailView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
     def get(self, request):
         if request.user.is_authenticated:
             user = User.objects.get(id=request.user.id)
@@ -37,6 +40,7 @@ class UserDetailView(APIView):
 
     def put(self, request):
         if request.user.is_authenticated:
+            print(request.data)
             user = User.objects.get(id=request.user.id)
             user_serializer = UserDetailSerializer(
                 user, data=request.data, partial=True)

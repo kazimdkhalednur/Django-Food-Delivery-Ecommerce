@@ -11,4 +11,6 @@ urlpatterns = [
          name="seller-order-list"),
     path("payment/", csrf_exempt(views.CreateCheckOutSession.as_view()), name="payment"),
     path("hook/", views.stripe_webhook_view, name="payment"),
+    path('review/<pk>/', views.ReviewAPIView.as_view(), name='review'),
+    path('check-review/<pk>/', views.UserReviewAPIView.as_view(), name='review'),
 ]

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Food, Category, Review
+from .models import Food, Category
 
 
 class FoodDetailSerializer(serializers.ModelSerializer):
@@ -80,16 +80,3 @@ class CreateCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ("id", "title", "image")
-
-
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ("id", "user", "food", "rating", "review")
-        depth = 1
-
-
-class ReviewCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ("food", "rating", "review")

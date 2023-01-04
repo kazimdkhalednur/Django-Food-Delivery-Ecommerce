@@ -37,30 +37,3 @@ class Food(models.Model):
     def clean(self):
         if self.user.type != 'seller':
             raise ValidationError({"user": "User type must be Seller"})
-
-
-class Review(models.Model):
-    RATING = {
-        ('1', '1'),
-        ('2', '2'),
-        ('3', '3'),
-        ('4', '4'),
-        ('5', '5'),
-    }
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    food = models.ForeignKey(Food, on_delete=models.CASCADE)
-    review = models.CharField(max_length=500)
-    rating = models.CharField(max_length=5, choices=RATING)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.user.email
-
-    def save(self, *args, **kwargs):
-        if self.user.type != 'buyer':
-            return
-        super(Review, self).save(*args, **kwargs)
-
-    def clean(self):
-        if self.user.type != 'buyer':
-            raise ValidationError({"user": "User type must be Buyer"})

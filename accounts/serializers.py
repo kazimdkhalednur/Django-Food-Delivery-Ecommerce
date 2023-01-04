@@ -72,9 +72,9 @@ class Base64ImageField(serializers.ImageField):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
-    img = Base64ImageField(
-        max_length=None, use_url=True,
-    )
+    # img = Base64ImageField(
+    #     max_length=None, use_url=True,
+    # )
 
     class Meta:
         model = User
