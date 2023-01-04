@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from django.db.models import Q
-from .models import Cart, Order, Review
+from .models import Cart, Order
 from products.models import Food
 from .serializers import OrderSerializer, ReviewSerializer
 
@@ -156,10 +156,17 @@ class PendingOrderListAPIView(APIView):
 class ReviewAPIView(APIView):
     def get(self, request, pk, format=None):
         food = Food.objects.get(id=pk)
-        review_list = Review.objects.filter(food=food).order_by('-created_at')
-        serializer = ReviewSerializer(review_list, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        cart_list = Cart.objects.filter(food=food).order_by('-created_at')
+        review = []
+        for cart in cart_list:
+            for order in cart.order_set.all().order_by('-created_at'):
+                if order.status == "delivered" and (cart.review or cart.rating):
+                    review.append({
+                        "name": cart.user.full_name,
+                        "review": cart.review,
+                        "rating": cart.rating
+                    })
+        return Response(review, status=status.HTTP_200_OK)
 
     def post(self, request, pk, format=None):
         if request.user.is_authenticated:
@@ -167,11 +174,14 @@ class ReviewAPIView(APIView):
                 if request.data:
                     rating = request.data['rating']
                     review = request.data['review']
-                    food = Food.objects.get(id=request.data['id'])
-                    cart = Cart.objects.filter(
-                        food=food, user=request.user).order_by("-created_at")
-                    Review.objects.create(
-                        cart=cart[0], food=food, rating=rating, review=review)
+                    food = Food.objects.get(id=pk)
+                    order_list = Order.objects.filter(
+                        user=request.user, status="delivered").order_by("-created_at")
+                    for cart in order_list[0].cart.all():
+                        if cart.food.id == food.id:
+                            cart.rating = rating
+                            cart.review = review
+                            cart.save()
                     return Response({"msg": "success"}, status=status.HTTP_201_CREATED)
                 return Response({"msg": "error"}, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -183,20 +193,11 @@ class UserReviewAPIView(APIView):
         if request.user.is_authenticated:
             if request.user.type == "buyer":
                 food = Food.objects.get(id=pk)
-                order = Order.objects.filter(
+                order_list = Order.objects.filter(
                     user=request.user, status="delivered").order_by("-created_at")
-                for cart in order[0].cart.all():
+                for cart in order_list[0].cart.all():
                     if cart.food.id == food.id:
-                        asd = Review.objects.filter(food=food)
-                        for review in asd:
-                            print(review.cart.id)
-                            print(cart.id)
-                            if review.cart.id == cart.id:
-                                print("OK")
-                        print(asd)
-                        print(cart)
-                        if Review.objects.filter(cart=cart):
-                            print("exixts")
+                        if cart.review or cart.rating:
                             return Response({"msg": False}, status=status.HTTP_200_OK)
                         return Response({"msg": True}, status=status.HTTP_200_OK)
                 return Response({"msg": False}, status=status.HTTP_200_OK)

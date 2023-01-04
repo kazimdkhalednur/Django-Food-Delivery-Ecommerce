@@ -6,13 +6,32 @@ from products.models import Food
 
 
 class Cart(models.Model):
+    RATING = {
+        ('1', '1'),
+        ('2', '2'),
+        ('3', '3'),
+        ('4', '4'),
+        ('5', '5'),
+    }
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     food = models.ForeignKey(Food, on_delete=models.CASCADE)
     quantity = models.SmallIntegerField()
+    review = models.CharField(max_length=500, blank=True, null=True)
+    rating = models.CharField(
+        max_length=5, choices=RATING, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.food.title}  {self.quantity}"
+
+    def save(self, *args, **kwargs):
+        if self.user.type != 'buyer':
+            return
+        super(Cart, self).save(*args, **kwargs)
+
+    def clean(self):
+        if self.user.type != 'buyer':
+            raise ValidationError({"user": "User type must be Buyer"})
 
 
 class Order(models.Model):
@@ -51,31 +70,4 @@ class Order(models.Model):
 
     def clean(self):
         if self.user.type != 'buyer':
-            raise ValidationError({"user": "User type must be Buyer"})
-
-
-class Review(models.Model):
-    RATING = {
-        ('1', '1'),
-        ('2', '2'),
-        ('3', '3'),
-        ('4', '4'),
-        ('5', '5'),
-    }
-    food = models.ForeignKey(Food, on_delete=models.CASCADE)
-    cart = models.OneToOneField(Cart, on_delete=models.CASCADE)
-    review = models.CharField(max_length=500)
-    rating = models.CharField(max_length=5, choices=RATING)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.cart.user.email
-
-    def save(self, *args, **kwargs):
-        if self.cart.user.type != 'buyer':
-            return
-        super(Review, self).save(*args, **kwargs)
-
-    def clean(self):
-        if self.cart.user.type != 'buyer':
             raise ValidationError({"user": "User type must be Buyer"})

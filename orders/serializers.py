@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Cart, Order, Review
+from .models import Cart, Order
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -12,6 +12,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Review
-        fields = ("id", "food", "cart", "rating", "review")
-        depth = 2
+        model = Cart
+        fields = ("review", "rating", "user")
+        depth = 1
