@@ -3,23 +3,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
 from .models import Food, Category
-from .serializers import FoodDetailSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer
+from .serializers import FoodSerializer, FoodCreateSerializer, CategorySerializer, CreateCategorySerializer
 from accounts.models import User
 
 
 class FoodAPIView(APIView):
     def get(self, request, format=None):
         food_list = Food.objects.filter(is_visible=True)
-        serializer = FoodDetailSerializer(food_list, many=True)
+        serializer = FoodSerializer(food_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SellerFoodAPIVIew(APIView):
     def get(self, request, format=None):
-        food_list = Food.objects.filter(
-            is_visible=True).order_by("-created_at")
-        serializer = FoodDetailSerializer(food_list, many=True)
+        food_list = Food.objects.all().order_by("-created_at")
+        serializer = FoodSerializer(food_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -29,8 +28,6 @@ class SellerFoodAPIVIew(APIView):
                 serializer = FoodCreateSerializer(data=request.data)
 
                 if serializer.is_valid():
-                    serializer.category = Category.objects.get(
-                        id=request.data['category'])
                     serializer.save(user=request.user)
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -47,12 +44,12 @@ class FoodDetailAPIView(APIView):
 
     def get(self, request, pk, format=None):
         food = self.get_object(pk)
-        serializer = FoodDetailSerializer(food)
+        serializer = FoodSerializer(food)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def put(self, request, pk):
         food_obj = Food.objects.get(id=pk)
-        serializer = FoodDetailSerializer(food_obj, data=request.data)
+        serializer = FoodSerializer(food_obj, data=request.data, partial=True)
         if serializer.is_valid():
             if food_obj.user == request.user:
                 serializer.save()
@@ -70,7 +67,38 @@ class FoodDetailAPIView(APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
+class FoodStatusAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return Food.objects.get(pk=pk)
+        except Food.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                food = self.get_object(pk)
+                if food.is_visible:
+                    food.is_visible = False
+                    food.save()
+                    return Response({"msg": "Public"}, status=status.HTTP_200_OK)
+                else:
+                    food.is_visible = True
+                    food.save()
+                    return Response({"msg": "Hide"}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
 class CategoriesAPIView(APIView):
+    def get(self, request, format=None):
+        category_list = Category.objects.filter(is_visible=True)
+        serializer = CategorySerializer(category_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SellerCategoriesAPIView(APIView):
     def get(self, request, format=None):
         category_list = Category.objects.all()
         serializer = CategorySerializer(category_list, many=True)
@@ -115,6 +143,7 @@ class CategoryAPIView(APIView):
                 serializer = CreateCategorySerializer(
                     category, data=request.data, partial=True)
                 if serializer.is_valid():
+                    print(request.data)
                     serializer.save()
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -127,6 +156,44 @@ class CategoryAPIView(APIView):
                 category = self.get_object(pk)
                 category.delete()
                 return Response({"msg": "delete Successfully"}, status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class CategoryStatusAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return Category.objects.get(pk=pk)
+        except Category.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                category = self.get_object(pk)
+                if category.food_set.all().exists():
+                    for food in category.food_set.all():
+                        if category.is_visible:
+                            category.is_visible = False
+                            category.save()
+                            food.is_visible = False
+                            food.save()
+                            return Response({"msg": "Public"}, status=status.HTTP_200_OK)
+                        else:
+                            category.is_visible = True
+                            category.save()
+                            food.is_visible = True
+                            food.save()
+                            return Response({"msg": "Hide"}, status=status.HTTP_200_OK)
+                else:
+                    if category.is_visible:
+                        category.is_visible = False
+                        category.save()
+                        return Response({"msg": "Public"}, status=status.HTTP_200_OK)
+                    else:
+                        category.is_visible = True
+                        category.save()
+                        return Response({"msg": "Hide"}, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
