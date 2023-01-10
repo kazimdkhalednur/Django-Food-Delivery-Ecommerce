@@ -9,7 +9,7 @@ from rest_framework import status
 from django.db.models import Q
 from .models import Cart, Order
 from products.models import Food
-from .serializers import OrderSerializer, ReviewSerializer
+from .serializers import *
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -144,8 +144,9 @@ class PendingOrderListAPIView(APIView):
     def get(self, request, format=None):
         if request.user.is_authenticated:
             if request.user.type == "seller":
+                query = Q() | Q(status="paid") | Q(status="on_the_way")
                 order_list = Order.objects.filter(
-                    status="paid").order_by('-created_at')
+                    query).order_by('-created_at')
                 serializer = OrderSerializer(order_list, many=True)
 
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -201,5 +202,70 @@ class UserReviewAPIView(APIView):
                             return Response({"msg": False}, status=status.HTTP_200_OK)
                         return Response({"msg": True}, status=status.HTTP_200_OK)
                 return Response({"msg": False}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class AssignDeliverManAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                order = self.get_object(pk)
+                serializer = DeliverSerializer(order)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                order = self.get_object(pk)
+                serializer = CreateDeliverSerializer(
+                    order, data=request.data, partial=True)
+                if serializer.is_valid():
+                    if request.data.get('deliver_user'):
+                        print('way')
+                        serializer.save(status='on_the_way')
+                    else:
+                        print('paid')
+                        serializer.save(status='paid')
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class OrderStatusAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                order = self.get_object(pk)
+                serializer = OrderStatusSerializer(order)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                order = self.get_object(pk)
+                serializer = OrderStatusSerializer(
+                    order, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)

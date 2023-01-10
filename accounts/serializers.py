@@ -32,3 +32,9 @@ class UserTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['user_type'] = user.type
         return token
+
+
+class DeliverUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "full_name")

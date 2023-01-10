@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User
-from .serializers import UserSerializer, UserDetailSerializer, UserTokenObtainPairSerializer
+from .serializers import UserSerializer, UserDetailSerializer, UserTokenObtainPairSerializer, DeliverUserSerializer
 
 
 class SignUpView(APIView):
@@ -49,4 +49,14 @@ class UserDetailView(APIView):
                 user_serializer.save()
                 return Response(user_serializer.data, status=status.HTTP_200_OK)
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class DeliveryManAPIView(APIView):
+    def get(self, request):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                user = User.objects.filter(type="deliver")
+                user_serializer = DeliverUserSerializer(user, many=True)
+                return Response(user_serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
