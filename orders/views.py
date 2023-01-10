@@ -269,3 +269,28 @@ class OrderStatusAPIView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class DeliveryOrderAPIView(APIView):
+    def get(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "deliver":
+                order_list = Order.objects.filter(
+                    deliver_user=request.user).order_by('-created_at')
+                serializer = DeliverOrderSerializer(order_list, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def post(self, request, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "deliver":
+                order = Order.objects.get(id=request.data['id'])
+                serializer = OrderStatusSerializer(
+                    order, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)

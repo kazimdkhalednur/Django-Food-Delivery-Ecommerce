@@ -40,3 +40,9 @@ class OrderStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ("id", "order_id", "status")
+
+
+class DeliverOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ("id", "order_id", "status", "address")
