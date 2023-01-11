@@ -48,7 +48,8 @@ class User(AbstractUser):
     username = None
     first_name = None
     last_name = None
-    full_name = models.CharField(_("full name"), max_length=150, blank=True)
+    full_name = models.CharField(
+        _("full name"), max_length=150, blank=True, null=True)
     email = models.EmailField(_("Email Address"), unique=True)
     img = models.ImageField(
         upload_to=profile_image_path, blank=True, null=True)

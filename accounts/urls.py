@@ -12,4 +12,10 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view()),
     path('detail/', views.UserDetailView.as_view()),
     path('deliver/', views.DeliveryManAPIView.as_view()),
+    path('seller/list/', views.SellerListAPIView.as_view()),
+    path('buyer/list/', views.BuyerListAPIView.as_view()),
+    path('deliver/list/', views.DeliveryManListAPIView.as_view()),
+    path('active/<pk>/', views.UserActiveAPIView.as_view()),
+    path('detail/<pk>/', views.RetrieveUpdateDeleteUserAPIView.as_view()),
+    path('create/', views.UserCreateAPIView.as_view()),
 ]

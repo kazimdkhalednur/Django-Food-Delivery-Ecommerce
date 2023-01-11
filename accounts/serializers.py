@@ -38,3 +38,21 @@ class DeliverUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "full_name")
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "email", "img", "phone", "is_active")
+
+
+class UserFullDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("full_name", "email", "img", "address", "phone", "type")
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("email", "password", "type")
