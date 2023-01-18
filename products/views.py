@@ -14,6 +14,13 @@ class FoodAPIView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class FoodListByCategoryAPIView(APIView):
+    def get(self, request, category, format=None):
+        food_list = Food.objects.filter(is_visible=True, category=category)
+        serializer = FoodSerializer(food_list, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class SellerFoodAPIVIew(APIView):
     def get(self, request, format=None):

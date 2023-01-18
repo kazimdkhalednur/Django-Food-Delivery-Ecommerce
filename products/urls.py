@@ -8,6 +8,7 @@ urlpatterns = [
     path('seller/', views.SellerFoodAPIVIew.as_view()),
     path('seller/food/status/<pk>/', views.FoodStatusAPIView.as_view()),
     path('seller/food/<pk>/', views.FoodDetailAPIView.as_view()),
+    path('seller/<category>/', views.FoodListByCategoryAPIView.as_view()),
     path('check/', views.CheckAPIView.as_view()),
     path('category/', views.CategoriesAPIView.as_view()),
     path('seller/category/', views.SellerCategoriesAPIView.as_view()),
