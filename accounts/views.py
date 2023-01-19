@@ -153,11 +153,26 @@ class UserActiveAPIView(APIView):
                 if user.is_active:
                     user.is_active = False
                     user.save()
-                    return Response({"active": False}, status=status.HTTP_200_OK)
+                    return Response({"active": False, "is_superuser": user.is_superuser}, status=status.HTTP_200_OK)
                 else:
                     user.is_active = True
                     user.save()
-                    return Response({"active": True}, status=status.HTTP_200_OK)
+                    return Response({"active": True, "is_superuser": user.is_superuser}, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+class IsSuperUserAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return User.objects.get(id=pk)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, pk, format=None):
+        if request.user.is_authenticated:
+            if request.user.type == "seller":
+                user = self.get_object(pk=pk)
+                return Response({"is_superuser": user.is_superuser}, status=status.HTTP_200_OK)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 

@@ -12,6 +12,7 @@ urlpatterns = [
     path('token/verify/', TokenVerifyView.as_view()),
     path('detail/', views.UserDetailView.as_view()),
     path('deliver/', views.DeliveryManAPIView.as_view()),
+    path('is-superuser/<pk>/', views.IsSuperUserAPIView.as_view()),
     path('seller/list/', views.SellerListAPIView.as_view()),
     path('buyer/list/', views.BuyerListAPIView.as_view()),
     path('deliver/list/', views.DeliveryManListAPIView.as_view()),

@@ -1,8 +1,10 @@
-import stripe
+from sslcommerz_python.payment import SSLCSession
 from decimal import Decimal
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.urls import reverse
+from django.shortcuts import redirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -11,7 +13,8 @@ from .models import Cart, Order
 from products.models import Food
 from .serializers import *
 
-stripe.api_key = settings.STRIPE_SECRET_KEY
+SSLCOMMERZE_STORE_ID = settings.SSLCOMMERZE_STORE_ID
+SSLCOMMERZE_API_KEY = settings.SSLCOMMERZE_API_KEY
 
 
 class OrderAPIView(APIView):
@@ -47,70 +50,76 @@ class CreateCheckOutSession(APIView):
             if request.user.type == "buyer":
                 id = request.data['id']
                 try:
+                    user = request.user
                     order = Order.objects.get(id=id, user=request.user)
-                    checkout_session = stripe.checkout.Session.create(
-                        line_items=[
-                            {
-                                # Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                                'price_data': {
-                                    'currency': 'usd',
-                                    'unit_amount': int(order.amount) * 100,
-                                    'product_data': {
-                                        'name': 'Total amount'
-                                    }
-                                },
-                                'quantity': 1,
-                            },
-                        ],
-                        metadata={
-                            "order_id": order.id
-                        },
-                        mode='payment',
-                        success_url=settings.SITE_URL + 'order?success=true',
-                        cancel_url=settings.SITE_URL + '?canceled=true',
+                    payment = SSLCSession(
+                        sslc_is_sandbox=True, sslc_store_id=SSLCOMMERZE_STORE_ID, sslc_store_pass=SSLCOMMERZE_API_KEY
                     )
-                    order.pending_payment_url = checkout_session.url
+                    status_url = request.build_absolute_uri(
+                        reverse("payment-complete"))
+                    payment.set_urls(
+                        success_url=status_url,
+                        fail_url=status_url,
+                        cancel_url=status_url,
+                        ipn_url=status_url
+                    )
+                    payment.set_product_integration(
+                        total_amount=Decimal(order.amount),
+                        currency='BDT',
+                        product_category='Mixed',
+                        product_name='order_items',
+                        num_of_item=1,
+                        shipping_method='Courier',
+                        product_profile='None'
+                    )
+                    payment.set_customer_info(
+                        name=user.full_name,
+                        email=user.email,
+                        address1=order.address,
+                        city="Dhaka",
+                        postcode="1100",
+                        country="Bangladesh",
+                        phone=order.phone
+                    )
+                    payment.set_shipping_info(
+                        shipping_to=user.full_name,
+                        address=order.address,
+                        city="Dhaka",
+                        postcode="1100",
+                        country="Bangladesh",
+                    )
+                    payment.set_additional_values(
+                        value_a=order.id
+                    )
+                    response = payment.init_payment()
+                    order.pending_payment_url = response['GatewayPageURL']
                     order.save()
-                    return Response(checkout_session, status=200)
+                    return Response(response, status=200)
                 except Exception as e:
-                    return Response({'msg': 'something went wrong while creating stripe session', 'error': str(e)}, status=500)
+                    return Response({'msg': 'something went wrong', 'error': str(e)}, status=500)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
-@csrf_exempt
-def stripe_webhook_view(request):
-    payload = request.body
-    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-    event = None
-
-    try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_SECRET_WEBHOOK
-        )
-    except ValueError as e:
-        # Invalid payload
-        return Response(status=400)
-    except stripe.error.SignatureVerificationError as e:
-        # Invalid signature
-        return Response(status=400)
-
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-
-        print(session)
-        id = session['metadata']['order_id']
-        order = Order.objects.get(id=id)
-        if session['payment_status']:
-            order.txnid = session['payment_intent']
+class PaymentCompleteAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        payment_data = request.POST
+        status = payment_data['status']
+        order = Order.objects.get(id=payment_data['value_a'])
+        if status == 'VALID':
+            val_id = payment_data['val_id']
+            order.txnid = payment_data['tran_id']
             order.is_paid = True
             order.status = 'paid'
             order.is_ordered = True
-        else:
+            order.save()
+            success_url = settings.SITE_URL + 'order?success=true'
+            return redirect(success_url)
+        elif status == 'FAILED':
             order.status = 'stole'
-        order.save()
-
-    return HttpResponse(status=200)
+            order.save()
+            cancel_url = settings.SITE_URL + '?canceled=true'
+            return redirect(cancel_url)
 
 
 class OrderListAPIView(APIView):

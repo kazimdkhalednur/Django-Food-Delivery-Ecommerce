@@ -114,7 +114,6 @@ CORS_ALLOWED_ORIGINS = [
 
 SITE_URL = "http://localhost:3000/"
 
-# stripe configurations
-STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', cast=str)
-STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', cast=str)
-STRIPE_SECRET_WEBHOOK = config('STRIPE_SECRET_WEBHOOK', cast=str)
+# SSLCommerze configuration
+SSLCOMMERZE_STORE_ID=config("SSLCOMMERZE_STORE_ID", default="abc637d17c8da70e")
+SSLCOMMERZE_API_KEY=config("SSLCOMMERZE_API_KEY", default="abc637d17c8da70e@ssl")
