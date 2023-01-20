@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.urls import reverse
 from django.shortcuts import redirect
+from django.db.models import Sum
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
@@ -303,3 +304,107 @@ class DeliveryOrderAPIView(APIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+class TotalIncomeAPIView(APIView):
+    def get(self, request, *kwargs):
+        order = Order.objects.aggregate(income=Sum('amount'))
+        return Response(order, status=status.HTTP_200_OK)
+
+
+class TotalIncomeByYearAPIView(APIView):
+    def get(self, request, *kwargs):
+        orders = Order.objects.all()
+        lis = set([order.created_at.year for order in orders])
+        final = list()
+        for year in lis:
+            dic = dict()
+            orders = Order.objects.filter(
+                created_at__year=year).aggregate(year_income=Sum('amount'))
+            dic['year'] = year
+            dic['income'] = orders['year_income']
+            final.append(dic)
+        return Response(final, status=status.HTTP_200_OK)
+
+
+class TotalIncomeByMonthAPIView(APIView):
+    def get(self, request, year, *kwargs):
+        orders = Order.objects.filter(created_at__year=year)
+        lis = set([order.created_at.month for order in orders])
+        final = [
+            {"name": "January", "value": 1, "amount": "-"},
+            {"name": "February", "value": 2, "amount": "-"},
+            {"name": "March", "value": 3, "amount": "-"},
+            {"name": "April", "value": 4, "amount": "-"},
+            {"name": "May", "value": 5, "amount": "-"},
+            {"name": "June", "value": 6, "amount": "-"},
+            {"name": "July", "value": 7, "amount": "-"},
+            {"name": "August", "value": 8, "amount": "-"},
+            {"name": "September", "value": 9, "amount": "-"},
+            {"name": "October", "value": 10, "amount": "-"},
+            {"name": "November", "value": 11, "amount": "-"},
+            {"name": "December", "value": 12, "amount": "-"},
+        ]
+        for i in final:
+            for month in lis:
+                if i['value'] == month:
+                    orders = Order.objects.filter(
+                        created_at__month=month).aggregate(month_income=Sum('amount'))
+                    i['amount'] = orders['month_income']
+        return Response(final, status=status.HTTP_200_OK)
+
+
+class TotalIncomeByDayAPIView(APIView):
+    def get(self, request, year, month, *kwargs):
+        q = Q() & Q(created_at__year=year) & Q(created_at__month=month)
+        orders = Order.objects.filter(q)
+        lis = set([order.created_at.day for order in orders])
+        final = [
+            {"day": 1, "amount": "-"},
+            {"day": 2, "amount": "-"},
+            {"day": 3, "amount": "-"},
+            {"day": 4, "amount": "-"},
+            {"day": 5, "amount": "-"},
+            {"day": 6, "amount": "-"},
+            {"day": 7, "amount": "-"},
+            {"day": 8, "amount": "-"},
+            {"day": 9, "amount": "-"},
+            {"day": 10, "amount": "-"},
+            {"day": 11, "amount": "-"},
+            {"day": 12, "amount": "-"},
+            {"day": 13, "amount": "-"},
+            {"day": 14, "amount": "-"},
+            {"day": 15, "amount": "-"},
+            {"day": 16, "amount": "-"},
+            {"day": 17, "amount": "-"},
+            {"day": 18, "amount": "-"},
+            {"day": 19, "amount": "-"},
+            {"day": 20, "amount": "-"},
+            {"day": 21, "amount": "-"},
+            {"day": 22, "amount": "-"},
+            {"day": 23, "amount": "-"},
+            {"day": 24, "amount": "-"},
+            {"day": 25, "amount": "-"},
+            {"day": 26, "amount": "-"},
+            {"day": 27, "amount": "-"},
+            {"day": 28, "amount": "-"},
+            {"day": 29, "amount": "-"},
+            {"day": 30, "amount": "-"},
+            {"day": 31, "amount": "-"},
+        ]
+        for i in final:
+            for day in lis:
+                if i['day'] == day:
+                    orders = Order.objects.filter(
+                        created_at__day=day).aggregate(day_income=Sum('amount'))
+                    i['amount'] = orders['day_income']
+        return Response(final, status=status.HTTP_200_OK)
+
+
+class DayIncomeAPIView(APIView):
+    def get(self, request, year, month, day, *kwargs):
+        q = Q() & Q(created_at__year=year) & Q(
+            created_at__month=month) & Q(created_at__day=day)
+        orders = Order.objects.filter(q).aggregate(day_income=Sum('amount'))
+        orders["day"] = int(day)
+        return Response(orders, status=status.HTTP_200_OK)

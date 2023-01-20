@@ -16,4 +16,13 @@ urlpatterns = [
     path("deliver/", views.DeliveryOrderAPIView.as_view()),
     path("deliver/<pk>/", views.AssignDeliverManAPIView.as_view()),
     path("status/<pk>/", views.OrderStatusAPIView.as_view()),
+    path("total-income/", views.TotalIncomeAPIView.as_view()),
+    path("total-income/year-list/", views.TotalIncomeByYearAPIView.as_view()),
+    path("total-income/month-list/<year>/",
+         views.TotalIncomeByMonthAPIView.as_view()),
+    path("total-income/day-list/<year>/<month>/",
+         views.TotalIncomeByDayAPIView.as_view()),
+    path("total-income/day-list/<year>/<month>/<day>/",
+         views.DayIncomeAPIView.as_view()),
+
 ]
